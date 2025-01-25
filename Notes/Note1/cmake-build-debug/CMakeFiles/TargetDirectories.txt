@@ -1,0 +1,3 @@
+C:/Users/User/Desktop/Module27/Notes/Note1/cmake-build-debug/CMakeFiles/Note1.dir
+C:/Users/User/Desktop/Module27/Notes/Note1/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/User/Desktop/Module27/Notes/Note1/cmake-build-debug/CMakeFiles/rebuild_cache.dir
