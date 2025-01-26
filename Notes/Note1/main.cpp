@@ -3,13 +3,15 @@
 
 class TrainCar {
 
-private:
+
     int passangersMax = 0;
     int passengers = 0;
+    class Train* train = nullptr;
 
 public:
-    TrainCar(int passangersMax) : passangersMax(passangersMax)
+    TrainCar(class Train* train, int passangersMax) : passangersMax(passangersMax), train(train)
     {
+        assert(train!= nullptr);
         assert(passangersMax >= 0);
     }
 
@@ -22,6 +24,9 @@ public:
         return passengers;
     }
 
+    int getNumber();
+
+
 };
 
 class Train {
@@ -31,12 +36,13 @@ private:
 
 public:
     TrainCar* getCarAt(int index){
+        if (this == nullptr) return nullptr;
         if (index < 0) return nullptr;
         if (index >= count) return nullptr;
         return trainCars[index];
     }
 
-    int getCount() const {
+    int getCount() {
         return count;
     }
 
@@ -45,10 +51,19 @@ public:
         this->count = count;
         this->trainCars = new TrainCar*[count];
         for (int i = 0; i < count; ++i) {
-            trainCars[i] = new TrainCar(passengersMax);
+            trainCars[i] = new TrainCar(this, passengersMax);
         }
     }
+
 };
+
+int TrainCar::getNumber() {
+    for (int i = 0; i < train->getCount(); ++i) {
+        TrainCar* car = train->getCarAt(i);
+        if (car == this) return i;
+    }
+    assert(false);
+}
 
 int main() {
 
