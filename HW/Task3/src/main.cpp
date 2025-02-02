@@ -7,7 +7,7 @@
 
 class Branch {
 public:
-    Branch(Branch* parent = nullptr) : parent(parent) {
+    Branch(Branch* parent = nullptr) : parent(parent), elfName("None") {
         if (parent) {
             parent->addChild(this);
         }
@@ -19,7 +19,7 @@ public:
 
     void addElf(const std::string& name) {
         if (name != "None") {
-            elves.push_back(name);
+            elfName = name;
         }
     }
 
@@ -30,10 +30,10 @@ public:
     }
 
     bool findElf(const std::string& name) {
-        if (std::find(elves.begin(), elves.end(), name) != elves.end()) {
+        if (elfName == name) {
             return true;
         }
-        for (auto child : children) {
+        for (Branch* child : children) {
             if (child->findElf(name)) {
                 return true;
             }
@@ -42,21 +42,34 @@ public:
     }
 
     int countNeighbors() {
-        return elves.size();
+        int count = 0;
+        for (Branch* child : children) {
+            if (child->elfName != "None") {
+                count++;
+            }
+        }
+        return count;
     }
 
-    const std::vector<std::string>& getElves() const {
-        return elves;
+    const std::string& getElfName() const {
+        return elfName;
     }
 
     const std::vector<Branch*>& getChildren() const {
         return children;
     }
 
+    void printTree(int level = 0) const {
+        std::cout << std::string(level * 2, ' ') << "Branch: " << elfName << std::endl;
+        for (Branch* child : children) {
+            child->printTree(level + 1);
+        }
+    }
+
 private:
     Branch* parent;
     std::vector<Branch*> children;
-    std::vector<std::string> elves;
+    std::string elfName;
 };
 
 void generateForest(std::vector<Branch>& trees) {
@@ -80,7 +93,12 @@ int main() {
 
     generateForest(trees);
 
-    for (Branch tree : trees) {
+    std::cout << "Forest structure:" << std::endl;
+    for (Branch& tree : trees) {
+        tree.printTree();
+    }
+
+    for (Branch& tree : trees) {
         for (Branch* branch : tree.getChildren()) {
             std::string elfName;
             std::cout << "Enter elf name for branch: ";
@@ -93,7 +111,7 @@ int main() {
     std::cout << "Enter the name of the elf to search: ";
     std::cin >> searchName;
 
-    for (Branch tree : trees) {
+    for (Branch& tree : trees) {
         for (Branch* branch : tree.getChildren()) {
             if (branch->findElf(searchName)) {
                 int neighbors = branch->countNeighbors();
