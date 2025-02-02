@@ -16,6 +16,7 @@ public:
 
     bool isBusy() const { return busy; }
     void completeTask() { busy = false; }
+    std::string getName() const { return name; }
 
 private:
     std::string name;
@@ -26,15 +27,14 @@ class Manager : public Employee {
 public:
     Manager(const std::string& name) : Employee(name) {}
 
-    void assignTasks(int taskId, std::vector<Employee>& workers) {
-        std::srand(taskId + 1);
+    void assignTasks(int taskId, std::vector<Employee*>& workers) {
         int tasksCount = std::rand() % (workers.size() + 1);
-        std::cout << "Manager is assigning " << tasksCount << " tasks." << std::endl;
+        std::cout << "Manager " << getName() << " is assigning " << tasksCount << " tasks." << std::endl;
 
         std::vector<Employee*> availableWorkers;
-        for (int i = 0; i < workers.size(); ++i) {
-            if (!workers[i].isBusy()) {
-                availableWorkers.push_back(&workers[i]);
+        for (Employee* worker : workers) {
+            if (!worker->isBusy()) {
+                availableWorkers.push_back(worker);
             }
         }
 
@@ -44,12 +44,16 @@ public:
         }
     }
 
-    std::vector<Employee>& getWorkers() {
+    void addWorker(Employee* worker) {
+        workers.push_back(worker);
+    }
+
+    std::vector<Employee*>& getWorkers() {
         return workers;
     }
 
 private:
-    std::vector<Employee> workers;
+    std::vector<Employee*> workers;
 };
 
 class CEO : public Employee {
@@ -57,26 +61,27 @@ public:
     CEO(const std::string& name) : Employee(name) {}
 
     void giveInstructions(int instructionId, std::vector<Manager>& managers) {
-        std::srand(instructionId);
         for (Manager& manager : managers) {
             manager.assignTasks(instructionId, manager.getWorkers());
         }
     }
 
-    void addTeam(const std::vector<Employee>& team) {
+    void addTeam(const std::vector<Employee*>& team) {
         workers = team;
     }
 
 private:
-    std::vector<Employee> workers;
+    std::vector<Employee*> workers;
 };
 
 class Team {
 public:
     Team(const std::string& managerName, int workerCount)
-        : manager(managerName) {
+            : manager(managerName) {
         for (int i = 0; i < workerCount; ++i) {
-            workers.push_back(Employee("Worker " + std::to_string(i + 1)));
+            Employee* worker = new Employee("Worker " + std::to_string(i + 1));
+            workers.push_back(worker);
+            manager.addWorker(worker);
         }
     }
 
@@ -84,16 +89,28 @@ public:
         return manager;
     }
 
-    std::vector<Employee>& getWorkers() {
+    std::vector<Employee*>& getWorkers() {
         return workers;
     }
 
 private:
     Manager manager;
-    std::vector<Employee> workers;
+    std::vector<Employee*> workers;
 };
 
+void printCompanyState(const std::vector<Team>& teams) {
+    std::cout << "Current state of the company:" << std::endl;
+    for (Team team : teams) {
+        std::cout << "Team managed by " << team.getManager().getName() << ":" << std::endl;
+        for (const Employee* worker : team.getWorkers()) {
+            std::cout << " - " << worker->getName() << (worker->isBusy() ? " (Busy)" : " (Available)") << std::endl;
+        }
+    }
+}
+
 int main() {
+    std::srand(std::time(0));
+
     int teamCount, workersPerTeam;
     std::cout << "Enter number of teams and workers per team: ";
     std::cin >> teamCount >> workersPerTeam;
@@ -120,11 +137,12 @@ int main() {
         if (instructionId == -1) break;
 
         ceo.giveInstructions(instructionId, managers);
+        printCompanyState(teams);
 
         bool allBusy = true;
         for (Team& team : teams) {
-            for (Employee& worker : team.getWorkers()) {
-                if (!worker.isBusy()) {
+            for (Employee* worker : team.getWorkers()) {
+                if (!worker->isBusy()) {
                     allBusy = false;
                     break;
                 }
@@ -133,7 +151,18 @@ int main() {
         }
 
         if (allBusy) {
-            std::cout << "All workers are busy. No more tasks can be assigned." << std::endl;
+            std::cout << "All workers are busy. Waiting for tasks to complete..." << std::endl;
+            for (Team& team : teams) {
+                for (Employee* worker : team.getWorkers()) {
+                    worker->completeTask();
+                }
+            }
+        }
+    }
+
+    for (Team& team : teams) {
+        for (Employee* worker : team.getWorkers()) {
+            delete worker;
         }
     }
 
