@@ -21,9 +21,16 @@ public:
     void fly() {
         std::cout << name << " fly: " << flightSpeed << std::endl;
     }
+};
 
-
-
+class ShootingMonster : public Monster
+{
+public:
+    double attackRange = 30;
+    void shoot() {
+        attack();
+        std::cout << name << " shooting: " << attackRange << std::endl;
+    }
 };
 
 
