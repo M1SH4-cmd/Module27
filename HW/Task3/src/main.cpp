@@ -3,7 +3,6 @@
 #include <string>
 #include <cstdlib>
 #include <ctime>
-#include <algorithm>
 
 class Branch {
 public:
@@ -43,9 +42,6 @@ public:
 
     int countNeighbors() {
         int count = 0;
-        if (elfName != "None") {
-            count++;
-        }
         for (Branch* child : children) {
             if (child->elfName != "None") {
                 count++;
@@ -75,7 +71,7 @@ private:
     std::string elfName;
 };
 
-void generateForest(std::vector<Branch>& trees) {
+void generateForest(std::vector<Branch*>& trees) {
     for (int i = 0; i < 5; ++i) {
         Branch* tree = new Branch();
         int numBigBranches = 3 + rand() % 3;
@@ -86,23 +82,19 @@ void generateForest(std::vector<Branch>& trees) {
                 new Branch(bigBranch);
             }
         }
-        trees.push_back(*tree);
+        trees.push_back(tree);
     }
 }
 
 int main() {
     std::srand(std::time(nullptr));
-    std::vector<Branch> trees;
+    std::vector<Branch*> trees;
 
     generateForest(trees);
 
-    std::cout << "Forest structure:" << std::endl;
-    for (Branch& tree : trees) {
-        tree.printTree();
-    }
 
-    for (Branch& tree : trees) {
-        for (Branch* branch : tree.getChildren()) {
+    for (Branch* tree : trees) {
+        for (Branch* branch : tree->getChildren()) {
             std::string elfName;
             std::cout << "Enter elf name for branch: ";
             std::cin >> elfName;
@@ -110,15 +102,20 @@ int main() {
         }
     }
 
+    std::cout << "Forest structure:" << std::endl;
+    for (Branch* tree : trees) {
+        tree->printTree();
+    }
+
     std::string searchName;
     std::cout << "Enter the name of the elf to search: ";
     std::cin >> searchName;
 
-    for (Branch& tree : trees) {
-        for (Branch* branch : tree.getChildren()) {
+    for (Branch* tree : trees) {
+        for (Branch* branch : tree->getChildren()) {
             if (branch->findElf(searchName)) {
                 int neighbors = branch->countNeighbors();
-                std::cout << "Total neighbors for " << searchName << ": " << neighbors - 1 << std::endl;
+                std::cout << "Total neighbors for " << searchName << ": " << neighbors << std::endl;
                 return 0;
             }
         }
