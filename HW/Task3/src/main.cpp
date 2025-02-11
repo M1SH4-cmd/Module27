@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <cstdlib>
 #include <ctime>
 
 class Branch {
@@ -16,10 +15,16 @@ public:
         children.push_back(child);
     }
 
-    void addElf(const std::string& name) {
-        if (name == "None") {
-            elfName = name;
-        }
+    void setElfName(const std::string& name) {
+        elfName = name;
+    }
+
+    const std::string& getElfName() const {
+        return elfName;
+    }
+
+    std::vector<Branch*> getChildren() const {
+        return children;
     }
 
     Branch* getTopBranch() {
@@ -28,40 +33,40 @@ public:
         return parent->getTopBranch();
     }
 
-    bool findElf(const std::string& name) {
+    Branch* findElf(const std::string& name) {
         if (elfName == name) {
-            return true;
+            return this;
         }
         for (Branch* child : children) {
-            if (child->findElf(name)) {
-                return true;
+            Branch* result = child->findElf(name);
+            if (result) {
+                return result;
             }
         }
-        return false;
+        return nullptr;
     }
 
     int countNeighbors() {
         int count = 0;
-        for (Branch* child : children) {
-            if (child->elfName != "None") {
+        Branch* topBranch = getTopBranch();
+        if (topBranch) {
+            if (topBranch->elfName != "None") {
                 count++;
             }
+            for (Branch* child : topBranch->children) {
+                if (child->elfName != "None") {
+                    count++;
+                }
+            }
         }
-        return count;
+        return count - 1;
     }
 
-    const std::string& getElfName() const {
-        return elfName;
-    }
-
-    const std::vector<Branch*>& getChildren() const {
-        return children;
-    }
-
-    void printTree(int level = 0) const {
-        std::cout << std::string(level * 2, ' ') << (parent ? "Middle " : "Big ") << elfName << std::endl;
-        for (Branch* child : children) {
-            child->printTree(level + 1);
+    void printTree(int level = 0, const std::string& prefix = "") const {
+        std::cout << std::string(level * 2, ' ') << prefix << elfName << std::endl;
+        for (size_t i = 0; i < children.size(); ++i) {
+            std::string childPrefix = (level == 0) ? "Big " + std::to_string(i + 1) + " - " : "Middle " + std::to_string(i + 1) + " - ";
+            children[i]->printTree(level + 1, childPrefix);
         }
     }
 
@@ -71,15 +76,24 @@ private:
     std::string elfName;
 };
 
+void deleteTree(Branch* branch) {
+    for (Branch* child : branch->getChildren()) {
+        deleteTree(child);
+    }
+    delete branch;
+}
+
 void generateForest(std::vector<Branch*>& trees) {
     for (int i = 0; i < 5; ++i) {
         Branch* tree = new Branch();
         int numBigBranches = 3 + rand() % 3;
         for (int j = 0; j < numBigBranches; ++j) {
             Branch* bigBranch = new Branch(tree);
+            bigBranch->setElfName("Big " + std::to_string(i + 1) + "." + std::to_string(j + 1));
             int numMediumBranches = 2 + rand() % 2;
             for (int k = 0; k < numMediumBranches; ++k) {
-                new Branch(bigBranch);
+                Branch* mediumBranch = new Branch(bigBranch);
+                mediumBranch->setElfName("Middle " + std::to_string(i + 1) + "." + std::to_string(j + 1) + "." + std::to_string(k + 1));
             }
         }
         trees.push_back(tree);
@@ -92,19 +106,26 @@ int main() {
 
     generateForest(trees);
 
-
-    for (Branch* tree : trees) {
-        for (Branch* branch : tree->getChildren()) {
+    for (size_t i = 0; i < trees.size(); ++i) {
+        std::cout << "Tree " << (i + 1) << ":" << std::endl;
+        for (Branch* bigBranch : trees[i]->getChildren()) {
             std::string elfName;
-            std::cout << "Enter elf name for branch: ";
+            std::cout << "Enter elf name for " << bigBranch->getElfName() << ": ";
             std::cin >> elfName;
-            branch->addElf(elfName);
+            bigBranch->setElfName(elfName);
+
+            for (Branch* mediumBranch : bigBranch->getChildren()) {
+                std::cout << "Enter elf name for " << mediumBranch->getElfName() << ": ";
+                std::cin >> elfName;
+                mediumBranch->setElfName(elfName);
+            }
         }
     }
 
     std::cout << "Forest structure:" << std::endl;
-    for (Branch* tree : trees) {
-        tree->printTree();
+    for (size_t i = 0; i < trees.size(); ++i) {
+        std::cout << "Tree " << (i + 1) << ":" << std::endl;
+        trees[i]->printTree();
     }
 
     std::string searchName;
@@ -112,15 +133,18 @@ int main() {
     std::cin >> searchName;
 
     for (Branch* tree : trees) {
-        for (Branch* branch : tree->getChildren()) {
-            if (branch->findElf(searchName)) {
-                int neighbors = branch->countNeighbors();
-                std::cout << "Total neighbors for " << searchName << ": " << neighbors << std::endl;
-                return 0;
-            }
+        Branch* foundBranch = tree->findElf(searchName);
+        if (foundBranch) {
+            int neighbors = foundBranch->countNeighbors();
+            std::cout << "Total neighbors for " << searchName << ": " << neighbors << std::endl;
+            deleteTree(tree);
+            return 0;
         }
     }
 
     std::cout << "Elf " << searchName << " not found." << std::endl;
+    for (Branch* tree : trees) {
+        deleteTree(tree);
+    }
     return 0;
 }
