@@ -17,7 +17,7 @@ public:
     }
 
     void addElf(const std::string& name) {
-        if (name != "None") {
+        if (name == "None") {
             elfName = name;
         }
     }
